@@ -24,7 +24,7 @@ enum StreamStates {
 export class YoutubeService {
   private readonly logger = new Logger(TrackService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async findOnYoutubeOne(artist: string, name: string): Promise<string> {
     this.logger.debug(`Searching ${artist} - ${name} on YT`);
@@ -34,7 +34,8 @@ export class YoutubeService {
   }
 
   downloadAndFormat(track: TrackEntity, folderName: string): Promise<void> {
-    this.logger.debug(`Downloading ${track.artist} - ${track.name} (${track.youtubeUrl}) from YT`);
+    let path;
+    this.logger.debug(`Downloading ${track.index} ${track.artist} - ${track.name} (${track.youtubeUrl}) from YT`);
     return new Promise((res, reject) => {
       ffmpeg(this.getYoutubeAudio(track.youtubeUrl, reject))
         .outputOptions(...this.getFfmpegOptions(track.name, track.artist))
@@ -42,10 +43,15 @@ export class YoutubeService {
         .on(StreamStates.Error, (err) => reject(err))
         .pipe(
           fs
-            .createWriteStream(folderName)
+            .createWriteStream(
+              path.join(
+                path.dirname(folderName),
+                `${track.index} - ${track.artist} - ${track.name}.${this.configService.get<string>(EnvironmentEnum.FORMAT)}`
+              )
+            )
             .on(StreamStates.Finish, () => {
               this.logger.debug(
-                `Downloaded ${track.artist} - ${track.name} to ${folderName}`,
+                `Downloaded ${track.index} ${track.artist} - ${track.name} to ${folderName}`,
               );
               res();
             })

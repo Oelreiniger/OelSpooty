@@ -58,15 +58,18 @@ export class PlaylistService {
       playlist2Save = { ...playlist, error: String(err) };
     }
     const savedPlaylist = await this.save(playlist2Save);
+    let index = 0;
     for (const track of detail.tracks ?? []) {
       await this.trackService.create(
         {
+          index: index,
           artist: track.artist,
           name: track.name,
           spotifyUrl: track.previewUrl,
         },
         savedPlaylist,
       );
+      index++;
     }
   }
 

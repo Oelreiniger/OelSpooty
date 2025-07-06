@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, NumericType } from 'typeorm';
 import { PlaylistEntity } from '../playlist/playlist.entity';
 
 export enum TrackStatusEnum {
@@ -14,6 +14,9 @@ export enum TrackStatusEnum {
 export class TrackEntity {
   @PrimaryGeneratedColumn()
   id?: number;
+
+  @Column()
+  index: number;
 
   @Column()
   artist: string;
