@@ -58,7 +58,7 @@ export class PlaylistService {
       playlist2Save = { ...playlist, error: String(err) };
     }
     const savedPlaylist = await this.save(playlist2Save);
-    let index = 0;
+    let index = 1;
     for (const track of detail.tracks ?? []) {
       await this.trackService.create(
         {
@@ -110,7 +110,7 @@ export class PlaylistService {
       } catch (err) {
         await this.update(playlist.id, { ...playlist, error: String(err) });
       }
-      let index = 0;
+      let index = 1;
       for (const track of tracks ?? []) {
         const track2Save = {
           index: index,

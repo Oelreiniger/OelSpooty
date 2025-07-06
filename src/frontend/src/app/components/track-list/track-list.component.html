@@ -1,6 +1,6 @@
 <a class="panel-block is-flex is-justify-content-space-between" *ngFor="let track of tracks$ | async">
   <div>
-    <span>{{ track.artist }} - {{ track.name }}</span>&nbsp;
+    <span>{{ track.index }} - {{ track.artist }} - {{ track.name }}</span>&nbsp;
     <a [href]="track.spotifyUrl"
        target="_blank"
        class="has-text-primary margin-left" title="Spotify preview of track that will be downloaded">
