@@ -13,19 +13,25 @@ export class SpotifyService {
     const clientSecret = this.configService.get<string>('SPOTIFY_CLIENT_SECRET');
 
     const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    try {
+      const res = await axios.post(
+        'https://accounts.spotify.com/api/token',
+        new URLSearchParams({ grant_type: 'client_credentials' }),
+        {
+          headers: {
+            Authorization: `Basic ${encoded}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
 
-    const res = await axios.post(
-      'https://accounts.spotify.com/api/token',
-      new URLSearchParams({ grant_type: 'client_credentials' }),
-      {
-        headers: {
-          Authorization: `Basic ${encoded}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      return res.data.access_token;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        throw new Error('Invalid Spotify credentials: Client ID or Secret may be incorrect.');
       }
-    );
-
-    return res.data.access_token;
+      throw new Error(`Failed to get Spotify access token: ${error.message}`);
+    }
   }
 
   private getSpotifyId(url: string): { type: 'playlist' | 'album' | 'artist', id: string } {
@@ -36,21 +42,16 @@ export class SpotifyService {
 
   async getDetailsWithRetry(url: string, retries = 3, timeoutMs = 10000): Promise<{ name: string; tracks: any[] }> {
     for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        this.logger.debug('[Fetching details] Attempt ${attempt} to fetch playlist...`')
-        const result = await Promise.race([
-          this.getDetails(url),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout during getDetails')), timeoutMs)
-          ),
-        ]) as { name: string; tracks: any[] };
+      this.logger.debug('[Fetching details] Attempt ${attempt} to fetch playlist...`')
+      const result = await Promise.race([
+        this.getDetails(url),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout during getDetails')), timeoutMs)
+        ),
+      ]) as { name: string; tracks: any[] };
 
-        this.logger.debug(`[Fetching details] Success on attempt ${attempt}`)
-        return { name: result.name, tracks: result.tracks ?? [] };
-      } catch (err) {
-        this.logger.error('[Fetching details] getDetails failed on attempt ${attempt}:`, (err as Error).message');
-        if (attempt === retries) throw new Error(`getDetails failed after ${retries} retries`);
-      }
+      this.logger.debug(`[Fetching details] Success on attempt ${attempt}`)
+      return { name: result.name, tracks: result.tracks ?? [] };
     }
   }
 
