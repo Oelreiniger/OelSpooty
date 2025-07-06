@@ -8,6 +8,7 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as yts from 'yt-search';
 import * as ytdl from '@distube/ytdl-core';
 import { Readable } from 'stream';
+import * as path from 'path';
 
 const META_DATA_TITLE = '-metadata';
 const YT_SETTINGS: ytdl.downloadOptions = {
@@ -34,21 +35,22 @@ export class YoutubeService {
   }
 
   downloadAndFormat(track: TrackEntity, folderName: string): Promise<void> {
-    let path;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '').trim();
+
     this.logger.debug(`Downloading ${track.index} ${track.artist} - ${track.name} (${track.youtubeUrl}) from YT`);
     return new Promise((res, reject) => {
       ffmpeg(this.getYoutubeAudio(track.youtubeUrl, reject))
-        .outputOptions(...this.getFfmpegOptions(track.name, track.artist))
+        .outputOptions(...this.getFfmpegOptions(track.index, track.name, track.artist))
         .format(this.configService.get<string>(EnvironmentEnum.FORMAT))
         .on(StreamStates.Error, (err) => reject(err))
         .pipe(
-          fs
-            .createWriteStream(
-              path.join(
-                path.dirname(folderName),
-                `${track.index} - ${track.artist} - ${track.name}.${this.configService.get<string>(EnvironmentEnum.FORMAT)}`
-              )
+          fs.createWriteStream(
+            path.join(
+              path.dirname(folderName),
+              `${pad(track.index)} - ${sanitize(track.artist)} - ${sanitize(track.name)}.${this.configService.get<string>(EnvironmentEnum.FORMAT)}`
             )
+          )
             .on(StreamStates.Finish, () => {
               this.logger.debug(
                 `Downloaded ${track.index} ${track.artist} - ${track.name} to ${folderName}`,
@@ -60,8 +62,10 @@ export class YoutubeService {
     });
   }
 
-  private getFfmpegOptions(name: string, artist: string): string[] {
+  private getFfmpegOptions(trackIndex: number, name: string, artist: string): string[] {
     return [
+      META_DATA_TITLE,
+      `track=${trackIndex}`,
       META_DATA_TITLE,
       `title=${name}`,
       META_DATA_TITLE,

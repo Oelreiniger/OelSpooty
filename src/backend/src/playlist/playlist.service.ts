@@ -51,7 +51,7 @@ export class PlaylistService {
     let detail;
     let playlist2Save: PlaylistEntity;
     try {
-      detail = await this.spotifyService.getPlaylistDetail(playlist.spotifyUrl);
+      detail = await this.spotifyService.getDetailsWithRetry(playlist.spotifyUrl);
       playlist2Save = { ...playlist, name: detail.name };
       this.createPlaylistFolderStructure(playlist2Save.name);
     } catch (err) {
@@ -110,8 +110,10 @@ export class PlaylistService {
       } catch (err) {
         await this.update(playlist.id, { ...playlist, error: String(err) });
       }
+      let index = 0;
       for (const track of tracks ?? []) {
         const track2Save = {
+          index: index,
           artist: track.artist,
           name: track.name,
           spotifyUrl: track.previewUrl,
@@ -125,6 +127,8 @@ export class PlaylistService {
         if (!isExist) {
           await this.trackService.create(track2Save, playlist);
         }
+
+        index++;
       }
     }
   }

@@ -41,6 +41,7 @@
     "rxjs": "^7.8.1",
     "spotify-url-info": "^3.2.18",
     "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.25",
     "yt-search": "^2.12.1"
   },
   "devDependencies": {
